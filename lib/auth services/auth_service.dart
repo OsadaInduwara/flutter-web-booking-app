@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'firestore_service.dart';
@@ -26,31 +27,50 @@ class AuthService {
       // Handle errors here
     }
   }
-
-  Future<void> signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      UserCredential userCredential = await _auth.signInWithCredential(credential);
-      User? user = userCredential.user;
-      if (userCredential.additionalUserInfo?.isNewUser ?? false) {
-        // Create a password for new Google user
-        await FirestoreService().saveUser(user!, "Google User");
-      }
-    } catch (e) {
-      // Handle errors here
-    }
-  }
-
   Future<void> sendPasswordReset(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
     } catch (e) {
       // Handle errors here
+    }
+  }
+  Future<void> signInWithGoogle() async {
+    try {
+      // Create a new provider
+      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+
+      // Add additional scope (optional)
+      googleProvider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+
+      // Set custom parameters (optional)
+      googleProvider.setCustomParameters({
+        'login_hint': 'user@example.com'
+      });
+
+      // Trigger the authentication flow
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithPopup(googleProvider);
+
+      // Get the user information from the UserCredential
+      User? user = userCredential.user;
+
+      if (user != null) {
+        // Check if the user exists in Firestore
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+
+        if (!userDoc.exists) {
+          // Save the user data to Firestore
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+            'name': user.displayName,
+            'email': user.email,
+            'photoURL': user.photoURL,
+            'role': 'primary_user',  // Default role
+            // Add any additional fields you need
+          });
+        }
+      }
+    } catch (error) {
+      print('Google Sign-In Failed: $error');
+      // Handle error accordingly
     }
   }
 

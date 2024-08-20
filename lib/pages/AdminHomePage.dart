@@ -1,29 +1,83 @@
 import 'package:flutter/material.dart';
+import '../widgets/navigation_bar.dart';
+import 'admin pages/dashboard.dart';
+import 'main pages/about_page.dart';
+import 'main pages/contact_page.dart';
+import 'main pages/events_page.dart';
+import 'main pages/gallery_page.dart';
+import 'main pages/services_page.dart';
+import 'main pages/testimonials_page.dart';
 
-import '../auth services/auth_service.dart';
-
-class AdminHomePage extends StatelessWidget {
-  final AuthService _auth = AuthService();
-
+class AdminHomePage extends StatefulWidget {
+  const AdminHomePage({super.key});
   @override
+  _AdminHomePageState createState() => _AdminHomePageState();
+}
 
+class _AdminHomePageState extends State<AdminHomePage> {
+
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = [
+    AdminHomeContent(),
+    AboutPage(),
+    EventsPage(),
+    ContactPage(),
+    GalleryPage(),
+    TestimonialsPage(),
+    ServicesPage(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Admin Panel'),
-        actions: <Widget>[
-          TextButton(
-            child: Text('Logout', style: TextStyle(color: Colors.white)),
-            onPressed: () async {
-              await _auth.signOut();
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-          )
-        ],
+      appBar: CustomNavigationBarAdmin(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
       ),
-      body: Center(
-        child: Text('Welcome to the Admin Panel'),
+      body: _pages[_selectedIndex],
+    );
+  }
+}
+
+class AdminHomeContent extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HeaderSection(),
+          DashBoard(),
+        ],
       ),
     );
   }
 }
+
+class HeaderSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(10.0),
+      color: Colors.blueAccent,
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Admin Panel',
+            style: TextStyle(fontSize: 32, color: Colors.white),
+          ),
+          SizedBox(height: 2),
+        ],
+      ),
+    );
+  }
+}
+
